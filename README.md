@@ -1,2 +1,3 @@
-# pwstorage-backend
+# PasswordStorage
+
 PasswordStorage backend
