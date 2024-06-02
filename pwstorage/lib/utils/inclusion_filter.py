@@ -1,11 +1,10 @@
 """Inclusion filter."""
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
+from sqlalchemy import Select
+from sqlalchemy.orm import InstrumentedAttribute
 
-if TYPE_CHECKING:
-    from sqlalchemy import Select
-    from sqlalchemy.orm import InstrumentedAttribute
 
 _SelectType = TypeVar("_SelectType", bound=Any)
 

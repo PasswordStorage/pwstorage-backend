@@ -1,13 +1,16 @@
 """Dependency injection annotations for the agent module."""
 
 from typing import Annotated, Any, AsyncGenerator
+from uuid import UUID
 
-from fastapi import Depends, Request
+from fastapi import Cookie, Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from redis.asyncio import ConnectionPool, Redis as AbstractRedis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from pwstorage.core.config import AppConfig
+from pwstorage.lib.schemas.auth import TokenData
 
 from . import constructors as app_depends
 
@@ -63,6 +66,32 @@ async def redis_conn(
         raise RuntimeError("Redis session not closed (redis dependency generator is not closed).")
 
 
+def get_client_host(request: Request) -> str:
+    """Get client host."""
+    client = request.client
+    return client.host if client else ""
+
+
+async def get_token_data(
+    config: Annotated[AppConfig, Depends(app_config_stub)],
+    redis: Annotated[AbstractRedis, Depends(redis_conn)],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
+) -> TokenData:
+    """Get token data."""
+    return await app_depends.get_token_data(config.jwt, redis, credentials.credentials)
+
+
+def get_refresh_token(
+    config: Annotated[AppConfig, Depends(app_config_stub)],
+    refresh_token: Annotated[str | None, Cookie()],
+) -> UUID:
+    """Get refresh token from cookies."""
+    return app_depends.get_refresh_token(config.jwt, refresh_token or "")
+
+
 AppConfigDependency = Annotated[AppConfig, Depends(app_config_stub)]
 SessionDependency = Annotated[AsyncSession, Depends(db_session)]
 RedisDependency = Annotated[AbstractRedis, Depends(redis_conn)]
+ClientHostDependency = Annotated[str, Depends(get_client_host)]
+TokenDataDependency = Annotated[TokenData, Depends(get_token_data)]
+RefreshTokenDependency = Annotated[UUID, Depends(get_refresh_token)]

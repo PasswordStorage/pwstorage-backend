@@ -79,7 +79,7 @@ class AbstractException(ApiException, metaclass=ABCMeta):
         is_public_: bool | None = None,
         additional_info_: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> None:
+    ):
         """Exception init method.
 
         Args:
@@ -91,33 +91,13 @@ class AbstractException(ApiException, metaclass=ABCMeta):
             is_public_: If True, then the exception is public.
             additional_info_: Additional public computer-readable information.
         """
-        # Set request ID
         self.current_request_id = request_id_ or uuid4()
-
-        current_detail = detail_
-        if current_detail is None:
-            current_detail = self.detail
-        self.current_detail = current_detail
-        current_headers: dict[str, str] | None = headers_
-        if current_headers is None:
-            current_headers = self.headers
-        self.current_headers = current_headers
-        current_status_code = status_code_
-        if current_status_code is None:
-            current_status_code = self.status_code
-        self.current_status_code = current_status_code
-        current_log_exception = log_exception_
-        if current_log_exception is None:
-            current_log_exception = self.log_exception
-        self.current_log_exception = current_log_exception
-        current_is_public = is_public_
-        if current_is_public is None:
-            current_is_public = self.is_public
-        self.current_is_public = current_is_public
-        current_additional_info = additional_info_
-        if current_additional_info is None:
-            current_additional_info = self.additional_info.copy()
-        self.current_additional_info = current_additional_info
+        self.current_detail = detail_ or self.detail
+        self.current_headers = headers_ or self.headers
+        self.current_status_code = status_code_ or self.status_code
+        self.current_log_exception = log_exception_ or self.log_exception
+        self.current_is_public = is_public_ or self.is_public
+        self.current_additional_info = additional_info_ or self.additional_info.copy()
         # Format detail from kwargs
         if kwargs and self.current_detail is not None and self.format_detail_from_kwargs:
             try:
@@ -203,8 +183,7 @@ class ExceptionExcInfo(AbstractException, Generic[_Exception]):
         is_public_: bool | None = None,
         additional_info_: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> None:
-        # noqa: D107
+    ):
         super().__init__(
             detail_,
             status_code_,

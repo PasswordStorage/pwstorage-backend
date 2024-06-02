@@ -174,9 +174,6 @@ def get_openapi(
                 schemas_used.add(value.split("/")[-1])
 
     recurse_schemas(openapi_schema)
-    if "components" not in openapi_schema:
-        openapi_schema["components"] = {}
-        return openapi_schema
     # Iterate over all schemas and add them to set
     all_schemas = set()
     for schema in openapi_schema["components"]["schemas"].keys():
