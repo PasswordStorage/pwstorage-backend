@@ -1,13 +1,19 @@
 """App dependencies constructors."""
 
+from json import loads as json_loads
 from typing import Any, AsyncGenerator, Generator
+from uuid import UUID
 
+from jwt import InvalidTokenError, decode as jwt_decode
 from redis.asyncio import ConnectionPool, Redis
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from pwstorage.core.config import AppConfig
+from pwstorage.core.config import AppConfig, JWTConfig
+from pwstorage.core.exceptions.abc import UnauthorizedException
+from pwstorage.lib.schemas.auth import TokenData
+from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
 
 
 def config() -> AppConfig:
@@ -78,3 +84,32 @@ async def redis_conn(pool: ConnectionPool) -> AsyncGenerator[Redis, None]:
         yield conn
     finally:
         await conn.aclose()
+
+
+def decode_jwt(config: JWTConfig, token: str) -> dict[str, Any]:
+    """Decode JWT."""
+    try:
+        return jwt_decode(token, key=config.secret_key, algorithms=[config.algorithm])
+    except InvalidTokenError:
+        raise UnauthorizedException(detail_="Invalid token")
+
+
+async def get_token_data(config: JWTConfig, redis: Redis, token: str) -> TokenData:
+    """Get token data."""
+    payload = decode_jwt(config, token)
+    str_data = await redis.get(AuthRedisKeyType.access.format(payload.get("sub")))
+
+    if str_data is None:
+        raise UnauthorizedException(detail_="Invalid token")
+
+    return TokenData.model_construct(**json_loads(str_data))
+
+
+def get_refresh_token(config: JWTConfig, token: str) -> UUID:
+    """Get refresh token."""
+    payload = decode_jwt(config, token)
+
+    try:
+        return UUID(payload.get("sub"))
+    except (ValueError, TypeError, AttributeError):
+        raise UnauthorizedException(detail_="Invalid refresh token")

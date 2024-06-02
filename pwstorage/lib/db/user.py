@@ -1,0 +1,96 @@
+"""UserModel CRUD."""
+
+from datetime import datetime, timezone
+
+from redis.asyncio import Redis
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from pwstorage.core.exceptions.user import UserDeletedException, UserEmailAlreadyExistsException, UserNotFoundException
+from pwstorage.lib.models import UserModel
+from pwstorage.lib.schemas.user import UserCreateSchema, UserPatchSchema, UserSchema, UserUpdateSchema
+from pwstorage.lib.utils.security import hash_password
+
+from . import auth_session as auth_session_db
+
+
+async def is_email_exists(db: AsyncSession, email: str) -> bool:
+    """Check if user email already exists."""
+    query = select(UserModel).where(UserModel.email == email, UserModel.deleted_at.is_(None))
+    return bool((await db.execute(query)).scalar_one_or_none())
+
+
+async def raise_for_user_email(db: AsyncSession, email: str) -> None:
+    """Raise for user email.
+
+    Raises:
+        UserEmailAlreadyExistsException: User email already exists.
+    """
+    if await is_email_exists(db, email):
+        raise UserEmailAlreadyExistsException(email=email)
+
+
+async def get_user_model(
+    db: AsyncSession, *, user_id: int | None = None, user_email: str | None = None, ignore_deleted: bool = False
+) -> UserModel:
+    """Get a user model.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        user_email (str): User email.
+
+    Returns:
+        UserModel: UserModel object.
+    """
+    query = select(UserModel)
+    if user_id:
+        query = query.where(UserModel.id == user_id)
+    if user_email:
+        query = query.where(UserModel.email == user_email, UserModel.deleted_at.is_(None))
+    result = (await db.execute(query)).scalar_one_or_none()
+
+    if result is None:
+        raise UserNotFoundException
+    elif not ignore_deleted and result.deleted_at is not None:
+        raise UserDeletedException
+
+    return result
+
+
+async def create_user(db: AsyncSession, schema: UserCreateSchema) -> UserSchema:
+    """Create user."""
+    await raise_for_user_email(db, schema.email)
+
+    user_model = UserModel(**schema.model_dump(exclude={"password"}), password_hash=hash_password(schema.password))
+    db.add(user_model)
+
+    await db.flush()
+    return UserSchema.model_construct(**user_model.to_dict())
+
+
+async def get_user(db: AsyncSession, user_id: int) -> UserSchema:
+    """Get user."""
+    user_model = await get_user_model(db, user_id=user_id)
+    return UserSchema.model_construct(**user_model.to_dict())
+
+
+async def update_user(db: AsyncSession, user_id: int, schema: UserUpdateSchema | UserPatchSchema) -> UserSchema:
+    """Update user."""
+    user_model = await get_user_model(db, user_id=user_id)
+
+    if schema.email and schema.email != user_model.email:
+        await raise_for_user_email(db, schema.email)
+
+    for field, value in schema.iterate_set_fields():
+        setattr(user_model, field, value)
+
+    await db.flush()
+    return UserSchema.model_construct(**user_model.to_dict())
+
+
+async def delete_user(db: AsyncSession, redis: Redis, user_id: int) -> None:
+    """Delete user."""
+    user_model = await get_user_model(db, user_id=user_id)
+    user_model.deleted_at = datetime.now(timezone.utc)
+    await auth_session_db.delete_user_sessions(db, redis, user_id)

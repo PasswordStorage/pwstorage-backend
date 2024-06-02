@@ -27,22 +27,11 @@ def check_special_characters(s: str) -> str:
     return s
 
 
-def check_name(name: str | None) -> str | None:
-    """Check name."""
-    if name is None:
-        return name
-    if not isinstance(name, str):
+def check_text(text: str) -> str:
+    """Check text."""
+    if not isinstance(text, str):
         raise ValueError("must be a string")
-    return check_special_characters(strip(not_empty(name)))
-
-
-def check_description(description: str | None) -> str | None:
-    """Check description."""
-    if description is None:
-        return description
-    if not isinstance(description, str):
-        raise ValueError("must be a string")
-    return check_special_characters(strip(not_empty(description)))
+    return check_special_characters(strip(not_empty(text)))
 
 
 def python_regex(
@@ -91,5 +80,4 @@ def python_regex(
 NotEmptyValidator = AfterValidator(not_empty)
 StripValidator = BeforeValidator(strip)
 CheckSpecialCharactersValidator = AfterValidator(check_special_characters)
-CheckNameValidator = BeforeValidator(check_name)
-CheckDescriptionValidator = BeforeValidator(check_description)
+CheckTextValidator = BeforeValidator(check_text)
