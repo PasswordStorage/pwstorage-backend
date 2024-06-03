@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Response
 
 from pwstorage.core.dependencies.app import (
-    AppConfigDependency,
     ClientHostDependency,
+    EncryptorDependency,
     RedisDependency,
     RefreshTokenDependency,
     SessionDependency,
@@ -23,15 +23,15 @@ router = APIRouter(tags=["auth"], prefix="/auth")
 @router.post("/login", response_model=TokenSchema, openapi_extra=exc_list(BadAuthDataException))
 async def login(
     response: Response,
-    config: AppConfigDependency,
     db: SessionDependency,
     redis: RedisDependency,
+    encryptor: EncryptorDependency,
     user_agent: UserAgentDependency,
     client_host: ClientHostDependency,
     schema: TokenCreateSchema,
 ) -> TokenSchema:
     """Login."""
-    result = await auth_db.create_token(config.jwt, db, redis, client_host, user_agent, schema)
+    result = await auth_db.create_token(db, redis, encryptor, client_host, user_agent, schema)
     response.set_cookie("refresh_token", result.refresh_token, max_age=result.refresh_token_expires_in * 60)
     return result
 
@@ -39,16 +39,16 @@ async def login(
 @router.post("/refresh_tokens", response_model=TokenSchema, openapi_extra=exc_list(BadFingerprintException))
 async def refresh_tokens(
     response: Response,
-    config: AppConfigDependency,
     db: SessionDependency,
     redis: RedisDependency,
+    encryptor: EncryptorDependency,
     user_agent: UserAgentDependency,
     client_host: ClientHostDependency,
     refresh_token: RefreshTokenDependency,
     schema: TokenRefreshSchema,
 ) -> TokenSchema:
     """Refresh tokens."""
-    result = await auth_db.refresh_token(config.jwt, db, redis, client_host, user_agent, refresh_token, schema)
+    result = await auth_db.refresh_token(db, redis, encryptor, client_host, user_agent, refresh_token, schema)
     response.set_cookie("refresh_token", result.refresh_token, max_age=result.refresh_token_expires_in * 60)
     return result
 

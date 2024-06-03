@@ -4,7 +4,7 @@ from .abc import BaseEnum
 
 
 class FilterType(BaseEnum):
-    """Filter types."""
+    """Filter type."""
 
     eq = "eq"
     """Equals."""

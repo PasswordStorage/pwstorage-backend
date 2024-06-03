@@ -4,14 +4,15 @@ from json import loads as json_loads
 from typing import Any, AsyncGenerator, Generator
 from uuid import UUID
 
-from jwt import InvalidTokenError, decode as jwt_decode
+from jwt import InvalidTokenError
 from redis.asyncio import ConnectionPool, Redis
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from pwstorage.core.config import AppConfig, JWTConfig
+from pwstorage.core.config import AppConfig
 from pwstorage.core.exceptions.abc import UnauthorizedException
+from pwstorage.core.security import Encryptor
 from pwstorage.lib.schemas.auth import TokenData
 from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
 
@@ -19,6 +20,15 @@ from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
 def config() -> AppConfig:
     """Get application config."""
     return AppConfig.from_env()
+
+
+def encryptor(config: AppConfig) -> Encryptor:
+    """Get Encryptor."""
+    return Encryptor(
+        config.security.secret_key,
+        config.jwt.algorithm,
+        config.jwt.access_token_expire_minutes,
+    )
 
 
 def db_url(config: AppConfig) -> str:
@@ -86,17 +96,9 @@ async def redis_conn(pool: ConnectionPool) -> AsyncGenerator[Redis, None]:
         await conn.aclose()
 
 
-def decode_jwt(config: JWTConfig, token: str) -> dict[str, Any]:
-    """Decode JWT."""
-    try:
-        return jwt_decode(token, key=config.secret_key, algorithms=[config.algorithm])
-    except InvalidTokenError:
-        raise UnauthorizedException(detail_="Invalid token")
-
-
-async def get_token_data(config: JWTConfig, redis: Redis, token: str) -> TokenData:
+async def get_token_data(encryptor: Encryptor, redis: Redis, token: str) -> TokenData:
     """Get token data."""
-    payload = decode_jwt(config, token)
+    payload = _decode_jwt(encryptor, token)
     str_data = await redis.get(AuthRedisKeyType.access.format(payload.get("sub")))
 
     if str_data is None:
@@ -105,11 +107,19 @@ async def get_token_data(config: JWTConfig, redis: Redis, token: str) -> TokenDa
     return TokenData.model_construct(**json_loads(str_data))
 
 
-def get_refresh_token(config: JWTConfig, token: str) -> UUID:
+def get_refresh_token(encryptor: Encryptor, token: str) -> UUID:
     """Get refresh token."""
-    payload = decode_jwt(config, token)
+    payload = _decode_jwt(encryptor, token)
 
     try:
         return UUID(payload.get("sub"))
     except (ValueError, TypeError, AttributeError):
         raise UnauthorizedException(detail_="Invalid refresh token")
+
+
+def _decode_jwt(encryptor: Encryptor, token: str) -> dict[str, Any]:
+    """Decode JWT."""
+    try:
+        return encryptor.decode_jwt(token)
+    except InvalidTokenError:
+        raise UnauthorizedException(detail_="Invalid token")
