@@ -20,7 +20,7 @@ from pwstorage.lib.utils.openapi import exc_list
 router = APIRouter(tags=["auth"], prefix="/auth")
 
 
-@router.post("/login", openapi_extra=exc_list(BadAuthDataException))
+@router.post("/login", response_model=TokenSchema, openapi_extra=exc_list(BadAuthDataException))
 async def login(
     response: Response,
     config: AppConfigDependency,
@@ -36,7 +36,7 @@ async def login(
     return result
 
 
-@router.post("/refresh_tokens", openapi_extra=exc_list(BadFingerprintException))
+@router.post("/refresh_tokens", response_model=TokenSchema, openapi_extra=exc_list(BadFingerprintException))
 async def refresh_tokens(
     response: Response,
     config: AppConfigDependency,
@@ -53,7 +53,7 @@ async def refresh_tokens(
     return result
 
 
-@router.delete("/logout")
+@router.delete("/logout", status_code=204)
 async def logout(
     response: Response,
     db: SessionDependency,

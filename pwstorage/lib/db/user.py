@@ -11,7 +11,7 @@ from pwstorage.lib.models import UserModel
 from pwstorage.lib.schemas.user import UserCreateSchema, UserPatchSchema, UserSchema, UserUpdateSchema
 from pwstorage.lib.utils.security import hash_password
 
-from . import auth_session as auth_session_db
+from . import auth_session as auth_session_db, folder as folder_db
 
 
 async def is_email_exists(db: AsyncSession, email: str) -> bool:
@@ -94,3 +94,4 @@ async def delete_user(db: AsyncSession, redis: Redis, user_id: int) -> None:
     user_model = await get_user_model(db, user_id=user_id)
     user_model.deleted_at = datetime.now(timezone.utc)
     await auth_session_db.delete_user_sessions(db, redis, user_id)
+    await folder_db.delete_user_foldes(db, user_id)
