@@ -34,10 +34,15 @@ class GeneralConfig(BaseSettings):
     origins: list[str] = Field(default=["*"])
 
 
+class SecurityConfig(BaseSettings):
+    """Security configuration."""
+
+    secret_key: str
+
+
 class JWTConfig(BaseSettings):
     """JWT configuration."""
 
-    secret_key: str
     algorithm: str = Field(default="HS256")
     access_token_expire_minutes: int = Field(default=30)
 
@@ -58,6 +63,7 @@ class AppConfig(BaseConfig):
     """Global application configuration."""
 
     general: GeneralConfig
+    security: SecurityConfig
     jwt: JWTConfig
     database: DatabaseConfig
     redis: RedisConfig

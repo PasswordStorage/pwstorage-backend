@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from pwstorage.core.config import AppConfig
+from pwstorage.core.security import Encryptor
 from pwstorage.lib.schemas.auth import TokenData
 
 from . import constructors as app_depends
@@ -18,6 +19,11 @@ from . import constructors as app_depends
 def app_config_stub() -> AppConfig:
     """Get app config stub."""
     raise NotImplementedError
+
+
+def encryptor(config: Annotated[AppConfig, Depends(app_config_stub)]) -> Encryptor:
+    """Get Encryptor."""
+    return app_depends.encryptor(config)
 
 
 def db_session_maker_stub() -> sessionmaker[Any]:
@@ -73,23 +79,24 @@ def get_client_host(request: Request) -> str:
 
 
 async def get_token_data(
-    config: Annotated[AppConfig, Depends(app_config_stub)],
+    encryptor: Annotated[Encryptor, Depends(encryptor)],
     redis: Annotated[AbstractRedis, Depends(redis_conn)],
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
 ) -> TokenData:
     """Get token data."""
-    return await app_depends.get_token_data(config.jwt, redis, credentials.credentials)
+    return await app_depends.get_token_data(encryptor, redis, credentials.credentials)
 
 
 def get_refresh_token(
-    config: Annotated[AppConfig, Depends(app_config_stub)],
+    encryptor: Annotated[Encryptor, Depends(encryptor)],
     refresh_token: Annotated[str | None, Cookie()],
 ) -> UUID:
     """Get refresh token from cookies."""
-    return app_depends.get_refresh_token(config.jwt, refresh_token or "")
+    return app_depends.get_refresh_token(encryptor, refresh_token or "")
 
 
 AppConfigDependency = Annotated[AppConfig, Depends(app_config_stub)]
+EncryptorDependency = Annotated[Encryptor, Depends(encryptor)]
 SessionDependency = Annotated[AsyncSession, Depends(db_session)]
 RedisDependency = Annotated[AbstractRedis, Depends(redis_conn)]
 ClientHostDependency = Annotated[str, Depends(get_client_host)]

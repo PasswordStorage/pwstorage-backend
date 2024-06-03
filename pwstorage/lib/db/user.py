@@ -7,9 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pwstorage.core.exceptions.user import UserDeletedException, UserEmailAlreadyExistsException, UserNotFoundException
+from pwstorage.core.security import Encryptor
 from pwstorage.lib.models import UserModel
 from pwstorage.lib.schemas.user import UserCreateSchema, UserPatchSchema, UserSchema, UserUpdateSchema
-from pwstorage.lib.utils.security import hash_password
 
 from . import auth_session as auth_session_db, folder as folder_db
 
@@ -62,7 +62,9 @@ async def create_user(db: AsyncSession, schema: UserCreateSchema) -> UserSchema:
     """Create user."""
     await raise_for_user_email(db, schema.email)
 
-    user_model = UserModel(**schema.model_dump(exclude={"password"}), password_hash=hash_password(schema.password))
+    user_model = UserModel(
+        **schema.model_dump(exclude={"password"}), password_hash=Encryptor.hash_password(schema.password)
+    )
     db.add(user_model)
 
     await db.flush()

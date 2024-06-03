@@ -28,6 +28,7 @@ class TokenData(BaseSchema):
 
     session_id: UUID
     user_id: int
+    encryption_key: str
 
 
 class TokenCreateSchema(BaseSchema):
