@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pwstorage-backend"
+name = "pwstorage"
 version = "0.1.0"
 description = "PasswordStorage backend"
 authors = ["Den <denaddressforwork@gmail.com>"]
