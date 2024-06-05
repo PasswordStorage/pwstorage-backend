@@ -57,7 +57,7 @@ async def create_record(
     db.add(record_model)
 
     await db.flush()
-    return RecordSchema.model_construct(**record_model.to_dict())
+    return RecordSchema.model_construct(**record_model.to_dict() | {"content": schema.content})
 
 
 async def get_records(
@@ -110,7 +110,9 @@ async def update_record(
         setattr(record_model, field, value)
 
     await db.flush()
-    return RecordSchema.model_construct(**record_model.to_dict())
+    return RecordSchema.model_construct(
+        **record_model.to_dict() | {"content": encryptor.decrypt_text(record_model.content, encryption_key)}
+    )
 
 
 async def delete_record(db: AsyncSession, record_id: int, user_id: int) -> None:
