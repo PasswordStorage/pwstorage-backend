@@ -1,15 +1,15 @@
 """empty message
 
-Revision ID: ac3f6b10fd41
+Revision ID: b76e439141e7
 Revises: 000000000000
-Create Date: 2024-06-03 20:01:36.540417+00:00
+Create Date: 2024-06-04 09:12:22.731884+00:00
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 
-revision = "ac3f6b10fd41"
+revision = "b76e439141e7"
 down_revision = "000000000000"
 branch_labels = None
 depends_on = None
@@ -68,7 +68,7 @@ def upgrade() -> None:
         "records",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("owner_user_id", sa.Integer(), nullable=False),
-        sa.Column("folder_id", sa.Integer(), nullable=False),
+        sa.Column("folder_id", sa.Integer(), nullable=True),
         sa.Column("record_type", sa.Enum("note", "login", "card", name="recordtype"), nullable=False),
         sa.Column("title", sa.String(length=128), nullable=False),
         sa.Column("content", sa.String(), nullable=False),

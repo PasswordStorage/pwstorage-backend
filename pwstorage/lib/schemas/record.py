@@ -25,7 +25,7 @@ RecordTitle = Annotated[str, v.python_regex(r"^[\da-zA-Z-_\ ]{1,128}$")]
 class BaseRecordSchema(BaseSchema):
     """Base record schema."""
 
-    folder_id: int = FOLDER_ID
+    folder_id: int | None = FOLDER_ID
     title: RecordTitle = RECORD_TITLE
     is_favorite: bool = RECORD_IS_FAVORITE
 
@@ -46,7 +46,7 @@ class RecordUpdateSchema(BaseRecordSchema):
 class RecordPatchSchema(RecordUpdateSchema):
     """Patch record schema."""
 
-    folder_id: int = FOLDER_ID(default=None)
+    folder_id: int | None = FOLDER_ID(default=None)
     title: RecordTitle = RECORD_TITLE(default=None)
     content: str = RECORD_CONTENT(default=None)
     is_favorite: bool = RECORD_IS_FAVORITE(default=None)

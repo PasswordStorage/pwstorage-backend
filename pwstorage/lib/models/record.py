@@ -24,7 +24,9 @@ class RecordModel(AbstractModel):
     This is a foreign key to the user table.
     """
 
-    folder_id: Mapped[int] = mapped_column("folder_id", ForeignKey("folders.id", ondelete="CASCADE"), nullable=False)
+    folder_id: Mapped[int | None] = mapped_column(
+        "folder_id", ForeignKey("folders.id", ondelete="CASCADE"), nullable=True
+    )
     """Folder ID.
 
     This is a foreign key to the folder table.
