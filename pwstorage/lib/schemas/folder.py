@@ -13,7 +13,7 @@ FOLDER_PARENT_ID = f.ID(prefix="Folder parent ID.", examples=[None])
 FOLDER_NAME = f.BaseField(description="Folder name.", min_length=1, max_length=64, examples=["MyFolder"])
 FOLDER_CREATED_AT = f.DATETIME(prefix="Folder creation datetime.")
 
-FolderName = Annotated[str, v.python_regex(r"^[\da-zA-Z-_]{1,64}$")]
+FolderName = Annotated[str, v.CheckTextValidator]
 
 
 class BaseFolderSchema(BaseSchema):

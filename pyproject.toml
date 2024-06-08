@@ -19,6 +19,7 @@ alembic = "^1.13.1"
 redis = {extras = ["hiredis"], version = "^5.0.4"}
 click = "^8.1.7"
 pyjwt = "^2.8.0"
+cryptography = "^42.0.8"
 
 [tool.poetry.scripts]
 pwstorage = "pwstorage.__main__:main"

@@ -20,7 +20,7 @@ FINGERPRINT = f.BaseField(
     description="Fingerprint.", min_length=32, max_length=64, examples=["f1b7e156414663c4b81fbadadedcf01f"]
 )
 
-TokenFingerprint = Annotated[str, v.python_regex(r"^[\da-zA-Z-]{32,64}$")]
+TokenFingerprint = Annotated[str, v.python_regex(r"^[\da-zA-Z]+$")]
 
 
 class TokenData(BaseSchema):

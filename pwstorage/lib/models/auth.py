@@ -24,7 +24,7 @@ class AuthSessionModel(AbstractModel):
     This is a foreign key to the user table.
     """
 
-    user_ip: Mapped[str | None] = mapped_column("user_ip", String(128), nullable=True)
+    user_ip: Mapped[str] = mapped_column("user_ip", String(128), nullable=False)
     """Auth session user ip."""
 
     user_agent: Mapped[str | None] = mapped_column("user_agent", String(256), nullable=True)

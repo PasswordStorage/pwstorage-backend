@@ -1,6 +1,7 @@
 """RecordModel CRUD."""
 
 from typing import Sequence
+from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,6 +109,8 @@ async def update_record(
 
     for field, value in schema.iterate_set_fields(exclude=["content"]):
         setattr(record_model, field, value)
+
+    record_model.updated_at = datetime.now(timezone.utc)
 
     await db.flush()
     return RecordSchema.model_construct(

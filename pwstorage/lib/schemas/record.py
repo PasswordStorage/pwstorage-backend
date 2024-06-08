@@ -19,7 +19,7 @@ RECORD_IS_FAVORITE = f.BaseField(description="Record favorite status.", examples
 RECORD_CREATED_AT = f.DATETIME(prefix="Record creation datetime.")
 RECORD_UPDATED_AT = f.DATETIME(prefix="Record updation datetime.")
 
-RecordTitle = Annotated[str, v.python_regex(r"^[\da-zA-Z-_\ ]{1,128}$")]
+RecordTitle = Annotated[str, v.CheckTextValidator]
 
 
 class BaseRecordSchema(BaseSchema):

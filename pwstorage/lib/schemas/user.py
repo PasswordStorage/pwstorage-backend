@@ -14,10 +14,8 @@ USER_CREATED_AT = f.DATETIME(prefix="User creation datetime.")
 USER_DELETED_AT = f.DATETIME(prefix="User deletion datetime.")
 
 UserEmail = Annotated[str, v.python_regex(r"^[-\w\.]+@([\w-]+\.)+[\w-]{2,4}$")]
-UserName = Annotated[str, v.python_regex(r"^[\da-zA-Z-_]{3,64}$")]
-UserPassword = Annotated[
-    str, v.python_regex(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,128}$")
-]
+UserName = Annotated[str, v.python_regex(r"^[\da-zA-Z-_]+$")]
+UserPassword = Annotated[str, v.python_regex(r"^[A-Za-z\d@$!%*?&]+$")]
 
 
 class BaseUserSchema(BaseSchema):
