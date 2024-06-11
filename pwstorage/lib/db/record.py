@@ -1,7 +1,7 @@
 """RecordModel CRUD."""
 
-from typing import Sequence
 from datetime import datetime, timezone
+from typing import Sequence
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,8 +65,9 @@ async def get_records(
     db: AsyncSession, user_id: int, pagination: PaginationRequest, filters: RecordFilterRequest
 ) -> RecordPaginationResponse:
     """Get records."""
-    query = select(RecordModel).where(RecordModel.owner_user_id == user_id)
-    query_count = select(func.count(RecordModel.id))
+    query_filter = (RecordModel.owner_user_id == user_id,)
+    query = select(RecordModel).where(*query_filter)
+    query_count = select(func.count(RecordModel.id).filter(*query_filter))
 
     query = add_filters_to_query(query, RecordModel, filters)
     query_count = add_filters_to_query(query_count, RecordModel, filters)

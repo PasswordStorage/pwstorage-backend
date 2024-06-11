@@ -59,8 +59,9 @@ async def create_folder(db: AsyncSession, user_id: int, schema: FolderCreateSche
 
 async def get_folders(db: AsyncSession, user_id: int, pagination: PaginationRequest) -> FolderPaginationResponse:
     """Get folders."""
-    query = select(FolderModel).where(FolderModel.owner_user_id == user_id)
-    query_count = select(func.count(FolderModel.id))
+    query_filter = (FolderModel.owner_user_id == user_id,)
+    query = select(FolderModel).where(*query_filter)
+    query_count = select(func.count(FolderModel.id).filter(*query_filter))
     query = add_pagination_to_query(query, FolderModel.id, pagination)
 
     folders = (await db.execute(query)).scalars().all()
