@@ -33,6 +33,7 @@ flake8-docstrings = "^1.6.0" # Docstring linter
 types-click = "^7.1.8" # For Click mypy support
 sqlalchemy = {extras = ["mypy"], version = "^2.0.30"}
 mypy = "^1.10.0"
+pre-commit = "^3.7.1"
 
 
 [tool.black]

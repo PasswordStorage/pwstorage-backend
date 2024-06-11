@@ -13,7 +13,7 @@ from pwstorage.lib.models import AuthSessionModel
 from pwstorage.lib.schemas.auth import TokenCreateSchema, TokenData, TokenRefreshSchema, TokenSchema
 from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
 
-from .auth_session import get_auth_session_model
+from .auth_session import create_auth_session, get_auth_session_model
 
 
 def raise_user_password(password: str, password_hash: str) -> None:
@@ -38,15 +38,14 @@ async def create_token(
     user_model = await user_db.get_user_model(db, user_email=schema.email)
     raise_user_password(schema.password, user_model.password_hash)
 
-    auth_session_model = AuthSessionModel(
+    auth_session_model = await create_auth_session(
+        db,
         user_id=user_model.id,
         user_ip=user_ip,
         user_agent=user_agent,
         fingerprint=schema.fingerprint,
         expires_in=schema.expires_in,
     )
-    db.add(auth_session_model)
-    await db.flush()
 
     await _create_access_token(redis, auth_session_model, access_token_id=auth_session_model.access_token)
 
