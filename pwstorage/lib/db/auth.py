@@ -41,10 +41,15 @@ async def create_token(
         user_id=user_model.id,
         user_ip=user_ip,
         user_agent=user_agent,
-        fingerprint=schema.fingerprint,
+        fingerprint=Encryptor.hash_password(schema.fingerprint),
     )
 
-    await _create_access_token(redis, auth_session_model, access_token_id=auth_session_model.access_token)
+    await _create_access_token(
+        redis,
+        auth_session_model,
+        access_token_id=auth_session_model.access_token,
+        expires_in=encryptor.jwt_expire_minutes,
+    )
 
     return TokenSchema(
         access_token=encryptor.encode_jwt(auth_session_model.access_token),
@@ -76,14 +81,15 @@ async def refresh_token(
     auth_session_model.user_agent = user_agent
     auth_session_model.last_online = datetime.now(timezone.utc)
 
-    if schema.fingerprint != auth_session_model.fingerprint:
+    if Encryptor.hash_password(schema.fingerprint) != auth_session_model.fingerprint:
         auth_session_model.access_token = None
-        auth_session_model.refresh_token = None
         auth_session_model.deleted_at = datetime.now(timezone.utc)
-        await db.flush()
+        await db.commit()
         raise BadFingerprintException
 
-    auth_session_model.access_token = await _create_access_token(redis, auth_session_model)
+    auth_session_model.access_token = await _create_access_token(
+        redis, auth_session_model, expires_in=encryptor.jwt_expire_minutes
+    )
     auth_session_model.refresh_token = uuid4()
     await db.flush()
 
