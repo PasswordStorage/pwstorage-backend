@@ -1,15 +1,15 @@
 """empty message
 
-Revision ID: 27aaf4225d1e
+Revision ID: da75cde67f7f
 Revises: 000000000000
-Create Date: 2024-06-16 19:34:14.700340+00:00
+Create Date: 2024-06-16 20:04:48.237874+00:00
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 
-revision = "27aaf4225d1e"
+revision = "da75cde67f7f"
 down_revision = "000000000000"
 branch_labels = None
 depends_on = None
@@ -38,7 +38,6 @@ def upgrade() -> None:
         sa.Column("fingerprint", sa.String(length=128), nullable=False),
         sa.Column("access_token", sa.Uuid(), nullable=True),
         sa.Column("refresh_token", sa.Uuid(), nullable=True),
-        sa.Column("expires_in", sa.Integer(), nullable=False),
         sa.Column("last_online", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
@@ -47,8 +46,6 @@ def upgrade() -> None:
             ["users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("access_token"),
-        sa.UniqueConstraint("refresh_token"),
     )
     op.create_table(
         "folders",
