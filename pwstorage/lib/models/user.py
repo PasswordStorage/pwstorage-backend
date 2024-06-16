@@ -1,11 +1,16 @@
 """User model."""
 
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Index, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .abc import AbstractModel
+
+
+if TYPE_CHECKING:
+    from .settings import SettingsModel
 
 
 class UserModel(AbstractModel):
@@ -32,5 +37,11 @@ class UserModel(AbstractModel):
 
     deleted_at: Mapped[datetime | None] = mapped_column("deleted_at", DateTime(timezone=True), nullable=True)
     """User deletion timestamp."""
+
+    settings: Mapped["SettingsModel"] = relationship("SettingsModel", back_populates="user")
+    """Settings model.
+
+    This is a relationship to the settings model. This is a one-to-one relationship.
+    """
 
     __table_args__ = (Index("idx_users_email", func.lower(email)),)

@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from typing import Sequence
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pwstorage.core.exceptions.record import RecordNotFoundException
@@ -123,8 +123,3 @@ async def delete_record(db: AsyncSession, record_id: int, user_id: int) -> None:
     """Delete record."""
     record_model = await get_record_model(db, record_id, user_id)
     await db.delete(record_model)
-
-
-async def delete_user_foldes(db: AsyncSession, user_id: int) -> None:
-    """Delete user records."""
-    await db.execute(delete(RecordModel).where(RecordModel.owner_user_id == user_id))
