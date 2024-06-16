@@ -8,12 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pwstorage.core.exceptions.auth import BadAuthDataException, BadFingerprintException
 from pwstorage.core.security import Encryptor
-from pwstorage.lib.db import user as user_db
+from pwstorage.lib.db import auth_session as auth_session_db, user as user_db
 from pwstorage.lib.models import AuthSessionModel
 from pwstorage.lib.schemas.auth import TokenCreateSchema, TokenData, TokenRefreshSchema, TokenSchema
 from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
-
-from .auth_session import create_auth_session, get_auth_session_model
 
 
 def raise_user_password(password: str, password_hash: str) -> None:
@@ -35,25 +33,31 @@ async def create_token(
     schema: TokenCreateSchema,
 ) -> TokenSchema:
     """Create token."""
-    user_model = await user_db.get_user_model(db, user_email=schema.email)
+    user_model = await user_db.get_user_model(db, user_email=schema.email, join_settings=True)
     raise_user_password(schema.password, user_model.password_hash)
 
-    auth_session_model = await create_auth_session(
+    auth_session_model = await auth_session_db.create_auth_session(
         db,
         user_id=user_model.id,
         user_ip=user_ip,
         user_agent=user_agent,
-        fingerprint=schema.fingerprint,
-        expires_in=schema.expires_in,
+        fingerprint=Encryptor.hash_password(schema.fingerprint),
     )
 
-    await _create_access_token(redis, auth_session_model, access_token_id=auth_session_model.access_token)
+    await _create_access_token(
+        redis,
+        auth_session_model,
+        access_token_id=auth_session_model.access_token,
+        expires_in=encryptor.jwt_expire_minutes,
+    )
 
     return TokenSchema(
         access_token=encryptor.encode_jwt(auth_session_model.access_token),
-        refresh_token=encryptor.encode_jwt(auth_session_model.refresh_token, expires_in=auth_session_model.expires_in),
+        refresh_token=encryptor.encode_jwt(
+            auth_session_model.refresh_token, expires_in=user_model.settings.auth_session_expiration
+        ),
         access_token_expires_in=encryptor.jwt_expire_minutes,
-        refresh_token_expires_in=auth_session_model.expires_in,
+        refresh_token_expires_in=user_model.settings.auth_session_expiration,
     )
 
 
@@ -67,7 +71,9 @@ async def refresh_token(
     schema: TokenRefreshSchema,
 ) -> TokenSchema:
     """Refresh token."""
-    auth_session_model = await get_auth_session_model(db, refresh_token=token_id, join_user=True)
+    auth_session_model = await auth_session_db.get_auth_session_model(
+        db, refresh_token=token_id, join_user=True, join_user_settings=True
+    )
 
     await redis.delete(AuthRedisKeyType.access.format(auth_session_model.access_token))
 
@@ -75,22 +81,25 @@ async def refresh_token(
     auth_session_model.user_agent = user_agent
     auth_session_model.last_online = datetime.now(timezone.utc)
 
-    if schema.fingerprint != auth_session_model.fingerprint:
+    if Encryptor.hash_password(schema.fingerprint) != auth_session_model.fingerprint:
         auth_session_model.access_token = None
-        auth_session_model.refresh_token = None
         auth_session_model.deleted_at = datetime.now(timezone.utc)
-        await db.flush()
+        await db.commit()
         raise BadFingerprintException
 
-    auth_session_model.access_token = await _create_access_token(redis, auth_session_model)
+    auth_session_model.access_token = await _create_access_token(
+        redis, auth_session_model, expires_in=encryptor.jwt_expire_minutes
+    )
     auth_session_model.refresh_token = uuid4()
     await db.flush()
 
     return TokenSchema(
         access_token=encryptor.encode_jwt(auth_session_model.access_token),
-        refresh_token=encryptor.encode_jwt(auth_session_model.refresh_token, expires_in=auth_session_model.expires_in),
+        refresh_token=encryptor.encode_jwt(
+            auth_session_model.refresh_token, expires_in=auth_session_model.user.settings.auth_session_expiration
+        ),
         access_token_expires_in=encryptor.jwt_expire_minutes,
-        refresh_token_expires_in=auth_session_model.expires_in,
+        refresh_token_expires_in=auth_session_model.user.settings.auth_session_expiration,
     )
 
 

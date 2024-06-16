@@ -1,4 +1,4 @@
-"""AuthSession CRUD."""
+"""AuthSessionModel CRUD."""
 
 from datetime import datetime, timezone
 from uuid import UUID
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from pwstorage.core.exceptions.auth_session import AuthSessionDeletedException, AuthSessionNotFoundException
-from pwstorage.lib.models import AuthSessionModel
+from pwstorage.lib.models import AuthSessionModel, UserModel
 from pwstorage.lib.schemas.auth_session import AuthSessionPaginationResponse, AuthSessionSchema
 from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
 from pwstorage.lib.schemas.pagination import PaginationRequest
@@ -23,6 +23,7 @@ async def get_auth_session_model(
     user_id: int | None = None,
     refresh_token: UUID | None = None,
     join_user: bool = False,
+    join_user_settings: bool = False,
     ignore_deleted: bool = False,
 ) -> AuthSessionModel:
     """Get a auth session model.
@@ -33,6 +34,7 @@ async def get_auth_session_model(
         user_id (int): User ID, using with session_id.
         refresh_token (UUID): Refresh token.
         join_user (bool): Whether to join the user.
+        join_user_settings (bool): Whether to join the user settings.
 
     Returns:
         AuthSessionModel: AuthSessionModel object.
@@ -43,7 +45,11 @@ async def get_auth_session_model(
     if refresh_token:
         query = query.where(AuthSessionModel.refresh_token == refresh_token)
     if join_user:
-        query = query.options(joinedload(AuthSessionModel.user))
+        join_query = [joinedload(AuthSessionModel.user)]
+        if join_user_settings:
+            join_query.append(joinedload(AuthSessionModel.user).joinedload(UserModel.settings))
+        query = query.options(*join_query)
+
     result = (await db.execute(query)).scalar_one_or_none()
 
     if result is None:
@@ -60,15 +66,10 @@ async def create_auth_session(
     user_ip: str,
     user_agent: str | None,
     fingerprint: str,
-    expires_in: int,
 ) -> AuthSessionModel:
     """Create auth session."""
     auth_session_model = AuthSessionModel(
-        user_id=user_id,
-        user_ip=user_ip,
-        user_agent=user_agent,
-        fingerprint=fingerprint,
-        expires_in=expires_in,
+        user_id=user_id, user_ip=user_ip, user_agent=user_agent, fingerprint=fingerprint
     )
     db.add(auth_session_model)
     await db.flush()

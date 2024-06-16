@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid as SqlUUID
+from sqlalchemy import DateTime, ForeignKey, String, Uuid as SqlUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .abc import AbstractModel
@@ -34,17 +34,14 @@ class AuthSessionModel(AbstractModel):
     """Auth session fingerprint."""
 
     access_token: Mapped[PyUUID | None] = mapped_column(
-        "access_token", SqlUUID(native_uuid=True, as_uuid=True), nullable=True, unique=True, default=uuid4
+        "access_token", SqlUUID(native_uuid=True, as_uuid=True), nullable=True, default=uuid4
     )
     """Auth session access token."""
 
     refresh_token: Mapped[PyUUID | None] = mapped_column(
-        "refresh_token", SqlUUID(native_uuid=True, as_uuid=True), nullable=True, unique=True, default=uuid4
+        "refresh_token", SqlUUID(native_uuid=True, as_uuid=True), nullable=True, default=uuid4
     )
     """Auth session refresh token."""
-
-    expires_in: Mapped[int] = mapped_column("expires_in", Integer(), nullable=False)
-    """Auth session expiration in minutes."""
 
     last_online: Mapped[datetime] = mapped_column(
         "last_online", DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)

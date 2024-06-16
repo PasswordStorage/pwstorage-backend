@@ -37,7 +37,6 @@ class TokenCreateSchema(BaseSchema):
     email: UserEmail = USER_EMAIL
     password: UserPassword = USER_PASSWORD
     fingerprint: TokenFingerprint = FINGERPRINT
-    expires_in: int = TOKEN_EXPIRATION(default=43800)
 
 
 class TokenRefreshSchema(BaseSchema):
