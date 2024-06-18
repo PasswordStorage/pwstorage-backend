@@ -240,3 +240,8 @@ DELETED_INCLUSION_FILTER = BaseField(
     filter_func=inclusion_filter,
     table_column="deleted_at",
 )
+ORDER_BY_FILTER = BaseField(
+    description="Order by filter.",
+    default=None,
+    filter_type=FilterType.order_by,
+)

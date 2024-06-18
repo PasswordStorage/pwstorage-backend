@@ -12,20 +12,17 @@ from pwstorage.lib.schemas.pagination import PaginationRequest
 _SelectType = TypeVar("_SelectType", bound=Any)
 
 
-def add_pagination_to_query(
-    query: Select[_SelectType], id_column: InstrumentedAttribute[Any], body: PaginationRequest
-) -> Select[_SelectType]:
+def add_pagination_to_query(query: Select[_SelectType], body: PaginationRequest) -> Select[_SelectType]:
     """Add pagination to query.
 
     Args:
         query (GenerativeSelect): Query to paginate.
-        id_column (InstrumentedAttribute[int]): ID column. Needed for ordering.
         body (PaginationRequest): Pagination body.
 
     Returns:
         GenerativeSelect: Paginated query.
     """
-    return query.order_by(id_column).slice((body.page - 1) * body.limit, body.page * body.limit)
+    return query.slice((body.page - 1) * body.limit, body.page * body.limit)
 
 
 async def get_rows_count_in(

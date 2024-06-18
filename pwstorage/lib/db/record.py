@@ -70,8 +70,8 @@ async def get_records(
     query_count = select(func.count(RecordModel.id).filter(*query_filter))
 
     query = add_filters_to_query(query, RecordModel, filters)
-    query_count = add_filters_to_query(query_count, RecordModel, filters)
-    query = add_pagination_to_query(query, RecordModel.id, pagination)
+    query_count = add_filters_to_query(query_count, RecordModel, filters, include_order_by=False)
+    query = add_pagination_to_query(query, pagination)
 
     result: Sequence[RecordModel] = (await db.execute(query)).scalars().all()
     schemas = [RecordSchema.model_construct(**record.to_dict() | {"content": None}) for record in result]
