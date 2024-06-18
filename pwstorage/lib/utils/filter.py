@@ -9,7 +9,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from pwstorage.core.exceptions.filter import FilterGroupAlreadyInUseException
 from pwstorage.lib.models.abc import AbstractModel
 from pwstorage.lib.schemas.abc import BaseSchema
-from pwstorage.lib.schemas.enums.filter import FilterType
+from pwstorage.lib.schemas.enums.filter import FilterType, OrderByType
 
 
 logger = getLogger(__name__)
@@ -18,7 +18,7 @@ _SelectType = TypeVar("_SelectType", bound=Any)
 
 
 def add_filters_to_query(
-    query: Select[_SelectType], table: type[AbstractModel], body: BaseSchema
+    query: Select[_SelectType], table: type[AbstractModel], body: BaseSchema, *, include_order_by: bool = True
 ) -> Select[_SelectType]:
     """Add filter to query.
 
@@ -26,6 +26,7 @@ def add_filters_to_query(
         query (GenerativeSelect): Query to filter.
         id_column (InstrumentedAttribute[int]): ID column. Needed for ordering.
         body (Any): Filter body.
+        include_order_by (bool): Include order by filder.
 
     Returns:
         GenerativeSelect: Filtered query.
@@ -92,6 +93,11 @@ def add_filters_to_query(
                 query = query.filter(table_column_obj.like(field_value))
             case FilterType.ilike:
                 query = query.filter(table_column_obj.ilike(field_value))
+            case FilterType.order_by:
+                if include_order_by:
+                    query = query.order_by(
+                        table_column_obj.asc() if field_value == OrderByType.ASC else table_column_obj.desc()
+                    )
             case FilterType.func:
                 func = extra.get("filter_func")
                 if func is None:

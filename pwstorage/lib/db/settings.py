@@ -49,6 +49,6 @@ async def update_settings(
     return SettingsSchema.model_construct(**settings_model.to_dict())
 
 
-async def delete_user_settings(db: AsyncSession, user_id: int) -> None:
-    """Delete user settings."""
+async def delete_settings(db: AsyncSession, user_id: int) -> None:
+    """Delete settings."""
     await db.execute(delete(SettingsModel).where(SettingsModel.user_id == user_id))

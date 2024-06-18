@@ -105,6 +105,6 @@ async def delete_user(db: AsyncSession, redis: Redis, user_id: int) -> None:
     """Delete user."""
     user_model = await get_user_model(db, user_id=user_id)
     user_model.deleted_at = datetime.now(timezone.utc)
-    await settings_db.delete_user_settings(db, user_id)
+    await settings_db.delete_settings(db, user_id)
     await auth_session_db.delete_user_sessions(db, redis, user_id)
-    await folder_db.delete_user_foldes(db, user_id)
+    await folder_db.delete_all_folders(db, user_id)

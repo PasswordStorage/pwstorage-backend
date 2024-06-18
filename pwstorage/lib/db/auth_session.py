@@ -83,7 +83,7 @@ async def get_auth_sessions(
     query_filter = (AuthSessionModel.user_id == user_id, AuthSessionModel.deleted_at.is_(None))
     query = select(AuthSessionModel).where(*query_filter)
     query_count = select(func.count(AuthSessionModel.id).filter(*query_filter))
-    query = add_pagination_to_query(query, AuthSessionModel.id, pagination)
+    query = add_pagination_to_query(query, pagination)
 
     auth_sessions = (await db.execute(query)).scalars().all()
     total_items, pages = await get_rows_count_in(db, query_count, pagination.limit)
