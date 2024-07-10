@@ -64,4 +64,6 @@ async def logout(
 ) -> None:
     """Logout."""
     response.delete_cookie("refresh_token")
-    return await auth_session_db.delete_session(db, redis, client_host, user_agent, token_data.session_id)
+    return await auth_session_db.delete_auth_session(
+        db, redis, client_host, user_agent, token_data.session_id, token_data.user_id
+    )

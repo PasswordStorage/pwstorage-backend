@@ -5,7 +5,7 @@ from typing import Annotated, Sequence
 
 from . import fields as f, validators as v
 from .abc import BaseSchema
-from .enums.filter import FilterType
+from .enums.filter import FilterType, OrderByType
 from .enums.record import RecordType
 from .folder import FOLDER_ID
 from .pagination import PaginationResponse
@@ -19,7 +19,7 @@ RECORD_IS_FAVORITE = f.BaseField(description="Record favorite status.", examples
 RECORD_CREATED_AT = f.DATETIME(prefix="Record creation datetime.")
 RECORD_UPDATED_AT = f.DATETIME(prefix="Record updation datetime.")
 
-RecordTitle = Annotated[str, v.python_regex(r"^[\da-zA-Z-_\ ]{1,128}$")]
+RecordTitle = Annotated[str, v.CheckTextValidator]
 
 
 class BaseRecordSchema(BaseSchema):
@@ -67,6 +67,10 @@ class RecordFilterRequest(BaseSchema):
 
     folder_id_eq: int | None = FOLDER_ID(default=None, filter_type=FilterType.eq, table_column="folder_id")
     record_type_eq: RecordType | None = RECORD_TYPE(default=None, filter_type=FilterType.eq, table_column="record_type")
+
+    title_order_by: OrderByType | None = f.ORDER_BY_FILTER(table_column="title")
+    created_at_order_by: OrderByType | None = f.ORDER_BY_FILTER(table_column="created_at")
+    updated_at_order_by: OrderByType | None = f.ORDER_BY_FILTER(table_column="updated_at")
 
     title_eq: str | None = RECORD_TITLE(default=None, filter_type=FilterType.eq, table_column="title")
     title_ilike: str | None = RECORD_TITLE(default=None, filter_type=FilterType.ilike, table_column="title")

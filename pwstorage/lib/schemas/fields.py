@@ -221,9 +221,6 @@ It is used to create other fields and remove "wrap_field(Field())" duplication.
 You can use it as usual Field().
 """
 
-
-NET_PORT = BaseField(description="Port number.", examples=[8080], gt=0, le=65535)
-
 TIMESTAMP = BaseField(description="Timestamp in seconds since UNIX epoch.", examples=[1610000000], ge=0)
 DATETIME = BaseField(description="Date and time in ISO 8601 format.", examples=["2021-01-07T12:00:00Z"])
 
@@ -242,4 +239,9 @@ DELETED_INCLUSION_FILTER = BaseField(
     filter_type=FilterType.func,
     filter_func=inclusion_filter,
     table_column="deleted_at",
+)
+ORDER_BY_FILTER = BaseField(
+    description="Order by filter.",
+    default=None,
+    filter_type=FilterType.order_by,
 )

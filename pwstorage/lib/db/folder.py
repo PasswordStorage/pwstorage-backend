@@ -59,9 +59,10 @@ async def create_folder(db: AsyncSession, user_id: int, schema: FolderCreateSche
 
 async def get_folders(db: AsyncSession, user_id: int, pagination: PaginationRequest) -> FolderPaginationResponse:
     """Get folders."""
-    query = select(FolderModel).where(FolderModel.owner_user_id == user_id)
-    query_count = select(func.count(FolderModel.id))
-    query = add_pagination_to_query(query, FolderModel.id, pagination)
+    query_filter = (FolderModel.owner_user_id == user_id,)
+    query = select(FolderModel).where(*query_filter)
+    query_count = select(func.count(FolderModel.id).filter(*query_filter))
+    query = add_pagination_to_query(query, pagination)
 
     folders = (await db.execute(query)).scalars().all()
     total_items, pages = await get_rows_count_in(db, query_count, pagination.limit)
@@ -98,6 +99,6 @@ async def delete_folder(db: AsyncSession, folder_id: int, user_id: int) -> None:
     await db.delete(folder_model)
 
 
-async def delete_user_foldes(db: AsyncSession, user_id: int) -> None:
+async def delete_all_folders(db: AsyncSession, user_id: int) -> None:
     """Delete user folders."""
     await db.execute(delete(FolderModel).where(FolderModel.owner_user_id == user_id))

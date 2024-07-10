@@ -5,13 +5,14 @@ from datetime import datetime, timezone
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from pwstorage.core.exceptions.user import UserDeletedException, UserEmailAlreadyExistsException, UserNotFoundException
 from pwstorage.core.security import Encryptor
 from pwstorage.lib.models import UserModel
 from pwstorage.lib.schemas.user import UserCreateSchema, UserPatchSchema, UserSchema, UserUpdateSchema
 
-from . import auth_session as auth_session_db, folder as folder_db
+from . import auth_session as auth_session_db, folder as folder_db, settings as settings_db
 
 
 async def is_email_exists(db: AsyncSession, email: str) -> bool:
@@ -31,7 +32,12 @@ async def raise_for_user_email(db: AsyncSession, email: str) -> None:
 
 
 async def get_user_model(
-    db: AsyncSession, *, user_id: int | None = None, user_email: str | None = None, ignore_deleted: bool = False
+    db: AsyncSession,
+    *,
+    user_id: int | None = None,
+    user_email: str | None = None,
+    join_settings: bool = False,
+    ignore_deleted: bool = False,
 ) -> UserModel:
     """Get a user model.
 
@@ -48,6 +54,8 @@ async def get_user_model(
         query = query.where(UserModel.id == user_id)
     if user_email:
         query = query.where(UserModel.email == user_email, UserModel.deleted_at.is_(None))
+    if join_settings:
+        query = query.options(joinedload(UserModel.settings))
     result = (await db.execute(query)).scalar_one_or_none()
 
     if result is None:
@@ -68,6 +76,8 @@ async def create_user(db: AsyncSession, schema: UserCreateSchema) -> UserSchema:
     db.add(user_model)
 
     await db.flush()
+    await settings_db.create_settings(db, user_model.id)
+
     return UserSchema.model_construct(**user_model.to_dict())
 
 
@@ -95,5 +105,6 @@ async def delete_user(db: AsyncSession, redis: Redis, user_id: int) -> None:
     """Delete user."""
     user_model = await get_user_model(db, user_id=user_id)
     user_model.deleted_at = datetime.now(timezone.utc)
+    await settings_db.delete_settings(db, user_id)
     await auth_session_db.delete_user_sessions(db, redis, user_id)
-    await folder_db.delete_user_foldes(db, user_id)
+    await folder_db.delete_all_folders(db, user_id)

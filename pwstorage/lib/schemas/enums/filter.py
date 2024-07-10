@@ -22,7 +22,16 @@ class FilterType(BaseEnum):
     """Like."""
     ilike = "ilike"
     """Case-insensitive like."""
+    order_by = "order_by"
+    """Order by (ASC or DESC)."""
     skip = "skip"
     """Skip auto-generated filter."""
     func = "func"
     """Function filter."""
+
+
+class OrderByType(BaseEnum):
+    """Order by filter type."""
+
+    ASC = "asc"
+    DESC = "desc"
