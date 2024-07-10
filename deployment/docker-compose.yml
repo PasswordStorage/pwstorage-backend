@@ -3,7 +3,7 @@ version: "3.8"
 
 services:
   app:
-    image: &app_image ghcr.io/PasswordStorage/pwstorage-backend
+    image: &app_image ghcr.io/passwordstorage/pwstorage-backend
 
     restart: on-failure
 
