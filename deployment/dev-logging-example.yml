@@ -5,7 +5,7 @@ disable_existing_loggers: False
 
 formatters:
   default:
-    class: ipmgr.lib.utils.log.ColoredFormatter
+    class: pwstorage.lib.utils.log.ColoredFormatter
 
 handlers:
   default:
