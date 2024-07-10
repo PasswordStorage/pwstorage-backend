@@ -2,11 +2,11 @@
 set -e
 
 if [ "$MODE" = "app" ]; then
-  statusmgr run -p $PORT -h $HOST
+  pwstorage run -p $PORT -h $HOST
 elif [ "$MODE" = "migrations" ]; then
-  statusmgr db migrate
+  pwstorage db migrate
 elif [ "$MODE" = "dev" ]; then
-  statusmgr dev --docker
+  pwstorage dev --docker
 elif [ "$MODE" = "shell" ]; then
   $@
 else
