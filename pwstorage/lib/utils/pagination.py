@@ -13,14 +13,14 @@ _SelectType = TypeVar("_SelectType", bound=Any)
 
 
 def add_pagination_to_query(query: Select[_SelectType], body: PaginationRequest) -> Select[_SelectType]:
-    """Add pagination to query.
+    """Add pagination to a SQLAlchemy query.
 
     Args:
-        query (GenerativeSelect): Query to paginate.
-        body (PaginationRequest): Pagination body.
+        query (Select[_SelectType]): The query to paginate.
+        body (PaginationRequest): The pagination request body.
 
     Returns:
-        GenerativeSelect: Paginated query.
+        Select[_SelectType]: The paginated query.
     """
     return query.slice((body.page - 1) * body.limit, body.page * body.limit)
 
@@ -28,25 +28,28 @@ def add_pagination_to_query(query: Select[_SelectType], body: PaginationRequest)
 async def get_rows_count_in(
     db: AsyncSession, id_column: InstrumentedAttribute[Any] | Select[Any], limit: int
 ) -> tuple[int, int]:
-    """Get rows count in table.
+    """Get the count of rows and the number of pages in a table.
 
     Args:
-        db (AsyncSession): Async SQLAlchemy session.
-        id_column (InstrumentedAttribute[int]): ID column.
-        limit (int): Limit.
+        db (AsyncSession): The async SQLAlchemy session.
+        id_column (InstrumentedAttribute[int] | Select[Any]): The ID column or a query to count rows.
+        limit (int): The limit of items per page.
 
     Returns:
-        tuple[int, int]: Rows count and pages count.
+        tuple[int, int]: The count of rows and the number of pages.
     """
     if isinstance(id_column, Select):
-        # If id_column is a query, then execute it and get the result
+        # If id_column is a query, execute it and get the result
         res = (await db.execute(id_column)).scalar()
     else:
-        # Else, construct a query and count the rows
+        # Otherwise, construct a query to count the rows
         res = (await db.execute(func.count(id_column))).scalar()
+
     if not isinstance(res, int):
         raise TypeError("Rows count is not an integer")
+
     pages = res / limit
     if pages % 1 != 0:
         pages = int(pages) + 1
+
     return res, int(pages)

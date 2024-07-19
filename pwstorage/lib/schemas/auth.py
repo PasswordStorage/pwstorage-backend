@@ -11,6 +11,7 @@ from .abc import BaseSchema
 from .user import USER_EMAIL, USER_PASSWORD, UserEmail, UserPassword
 
 
+# Field definitions for Auth schemas
 TOKEN = f.BaseField(
     description="JSON Web Token.",
     examples=[jwt_encode({"sub": str(uuid4()), "exp": datetime.now(timezone.utc)}, "SECRET_KEY")],
@@ -20,11 +21,15 @@ FINGERPRINT = f.BaseField(
     description="Fingerprint.", min_length=32, max_length=64, examples=["f1b7e156414663c4b81fbadadedcf01f"]
 )
 
+# Type alias for token fingerprint with validation
 TokenFingerprint = Annotated[str, v.python_regex(r"^[\da-zA-Z]+$")]
 
 
-class TokenData(BaseSchema):
-    """Token redis data."""
+class TokenRedisData(BaseSchema):
+    """Token redis data.
+
+    This schema represents the data stored in Redis for a token.
+    """
 
     session_id: UUID
     user_id: int
@@ -32,7 +37,10 @@ class TokenData(BaseSchema):
 
 
 class TokenCreateSchema(BaseSchema):
-    """Token create schema."""
+    """Token create schema.
+
+    This schema is used for creating a new token.
+    """
 
     email: UserEmail = USER_EMAIL
     password: UserPassword = USER_PASSWORD
@@ -40,13 +48,19 @@ class TokenCreateSchema(BaseSchema):
 
 
 class TokenRefreshSchema(BaseSchema):
-    """Token refresh schema."""
+    """Token refresh schema.
+
+    This schema is used for refreshing an existing token.
+    """
 
     fingerprint: TokenFingerprint = FINGERPRINT
 
 
 class TokenSchema(BaseSchema):
-    """Token create schema."""
+    """Token schema.
+
+    This schema represents a token with its details.
+    """
 
     access_token: str = TOKEN
     refresh_token: str = TOKEN

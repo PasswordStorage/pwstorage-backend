@@ -20,16 +20,16 @@ _SelectType = TypeVar("_SelectType", bound=Any)
 def add_filters_to_query(
     query: Select[_SelectType], table: type[AbstractModel], body: BaseSchema, *, include_order_by: bool = True
 ) -> Select[_SelectType]:
-    """Add filter to query.
+    """Add filters to a SQLAlchemy query.
 
     Args:
-        query (GenerativeSelect): Query to filter.
-        id_column (InstrumentedAttribute[int]): ID column. Needed for ordering.
-        body (Any): Filter body.
-        include_order_by (bool): Include order by filder.
+        query (Select[_SelectType]): The query to filter.
+        table (type[AbstractModel]): The table model.
+        body (BaseSchema): The filter body.
+        include_order_by (bool): Whether to include order by filters. Defaults to True.
 
     Returns:
-        GenerativeSelect: Filtered query.
+        Select[_SelectType]: The filtered query.
     """
     groups: set[str] = set()
 
@@ -37,12 +37,14 @@ def add_filters_to_query(
         field_value = getattr(body, field_name)
         if field_value is None:
             continue
+
         extra: dict[str, Any]
         if callable(field.json_schema_extra):
-            logger.warn(
+            logger.warning(
                 "Filter schema extra for field %s.%s is not a dict, but a callable", body.__class__.__name__, field_name
             )
             continue
+
         if field.json_schema_extra is not None:
             extra = field.json_schema_extra
         else:
@@ -50,31 +52,37 @@ def add_filters_to_query(
                 extra = field._inititial_kwargs
             else:
                 extra = {}
+
         table_column = extra.get("table_column", field_name)
         filter_type = extra.get("filter_type", FilterType.eq)
+
         # Check if filter group is already in use, if set
         filter_group = extra.get("group", None)
         if filter_group is not None:
             if filter_group in groups:
                 raise FilterGroupAlreadyInUseException(group=filter_group)
             groups.add(filter_group)
+
         # Skip filters
         if filter_type == FilterType.skip:
             logger.debug("Skipping filter by %s with %s and %s", table_column, filter_type, field_value)
             continue
 
         logger.debug("Filtering by %s with %s and %s", table_column, filter_type, field_value)
+
         # Replace special characters for LIKE and ILIKE filters
         # and add % to the beginning and the end of the string
         # to make it work like a wildcard
         # https://www.postgresql.org/docs/current/functions-matching.html
         if filter_type in (FilterType.like, FilterType.ilike):
             field_value = field_value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("~", "\\~")
-            field_value = field_value + "%"
+            field_value = "%" + field_value + "%"
+
         # Get column object
         table_column_obj: InstrumentedAttribute[Any] | None = getattr(table, table_column, None)
         if table_column_obj is None:
-            raise ValueError("Table %s has no column %s", table, table_column)
+            raise ValueError(f"Table {table} has no column {table_column}")
+
         # Add filter to query
         match filter_type:
             case FilterType.eq:
@@ -104,7 +112,7 @@ def add_filters_to_query(
                     raise ValueError("Filter function is not defined")
                 query = func(query, table_column_obj, field_value)
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(f"Filter type {filter_type} is not implemented")
 
     logger.debug("Filtered query: %s", query)
 

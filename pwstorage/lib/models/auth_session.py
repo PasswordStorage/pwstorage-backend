@@ -25,7 +25,7 @@ class AuthSessionModel(AbstractModel):
     """
 
     user_ip: Mapped[str] = mapped_column("user_ip", String(128), nullable=False)
-    """Auth session user ip."""
+    """Auth session user IP."""
 
     user_agent: Mapped[str | None] = mapped_column("user_agent", String(256), nullable=True)
     """Auth session user agent."""

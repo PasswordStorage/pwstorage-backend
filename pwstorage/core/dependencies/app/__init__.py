@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pwstorage.core.config import AppConfig
 from pwstorage.core.security import Encryptor
-from pwstorage.lib.schemas.auth import TokenData
+from pwstorage.lib.schemas.auth import TokenRedisData
 
 from . import fastapi
 
@@ -19,7 +19,7 @@ EncryptorDependency = Annotated[Encryptor, *fastapi.EncryptorDependency.__metada
 SessionDependency = Annotated[AsyncSession, *fastapi.SessionDependency.__metadata__]
 RedisDependency = Annotated[Redis, *fastapi.RedisDependency.__metadata__]
 ClientHostDependency = Annotated[str, *fastapi.ClientHostDependency.__metadata__]
-TokenDataDependency = Annotated[TokenData, *fastapi.TokenDataDependency.__metadata__]
+TokenDataDependency = Annotated[TokenRedisData, *fastapi.TokenDataDependency.__metadata__]
 RefreshTokenDependency = Annotated[UUID, *fastapi.RefreshTokenDependency.__metadata__]
 
 UserAgentDependency = Annotated[str, Header()]
