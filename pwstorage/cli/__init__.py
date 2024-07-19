@@ -1,16 +1,9 @@
-"""CLI commands for pwstorage API.
+"""CLI commands for Password-Storage API.
 
 All commands must be re-exported in this module, to launch code execution.
 """
 
-from . import run, utils
-
-
-try:
-    from . import db
-except ModuleNotFoundError:
-    pass
-
+from . import db, run, utils
 from .cli import cli
 
 

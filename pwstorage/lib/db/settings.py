@@ -22,7 +22,15 @@ async def get_settings_model(db: AsyncSession, user_id: int) -> SettingsModel:
 
 
 async def create_settings(db: AsyncSession, user_id: int) -> SettingsSchema:
-    """Create settings."""
+    """Create settings.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+
+    Returns:
+        SettingsSchema: The created SettingsSchema object.
+    """
     record_model = SettingsModel(user_id=user_id)
     db.add(record_model)
 
@@ -31,7 +39,15 @@ async def create_settings(db: AsyncSession, user_id: int) -> SettingsSchema:
 
 
 async def get_settings(db: AsyncSession, user_id: int) -> SettingsSchema:
-    """Get settings."""
+    """Get settings.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+
+    Returns:
+        SettingsSchema: The retrieved SettingsSchema object.
+    """
     settings_model = await get_settings_model(db, user_id)
     return SettingsSchema.model_construct(**settings_model.to_dict())
 
@@ -39,7 +55,16 @@ async def get_settings(db: AsyncSession, user_id: int) -> SettingsSchema:
 async def update_settings(
     db: AsyncSession, user_id: int, schema: SettingsUpdateSchema | SettingsPatchSchema
 ) -> SettingsSchema:
-    """Update settings."""
+    """Update settings.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        schema (SettingsUpdateSchema | SettingsPatchSchema): Schema containing settings update data.
+
+    Returns:
+        SettingsSchema: The updated SettingsSchema object.
+    """
     settings_model = await get_settings_model(db, user_id)
 
     for field, value in schema.iterate_set_fields():
@@ -50,5 +75,10 @@ async def update_settings(
 
 
 async def delete_settings(db: AsyncSession, user_id: int) -> None:
-    """Delete settings."""
+    """Delete settings.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+    """
     await db.execute(delete(SettingsModel).where(SettingsModel.user_id == user_id))

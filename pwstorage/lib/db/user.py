@@ -16,16 +16,28 @@ from . import auth_session as auth_session_db, folder as folder_db, settings as 
 
 
 async def is_email_exists(db: AsyncSession, email: str) -> bool:
-    """Check if user email already exists."""
+    """Check if user email already exists.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        email (str): User email.
+
+    Returns:
+        bool: True if email exists, False otherwise.
+    """
     query = select(UserModel).where(UserModel.email == email, UserModel.deleted_at.is_(None))
     return bool((await db.execute(query)).scalar_one_or_none())
 
 
 async def raise_for_user_email(db: AsyncSession, email: str) -> None:
-    """Raise for user email.
+    """Raise an exception if the user email already exists.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        email (str): User email.
 
     Raises:
-        UserEmailAlreadyExistsException: User email already exists.
+        UserEmailAlreadyExistsException: If the user email already exists.
     """
     if await is_email_exists(db, email):
         raise UserEmailAlreadyExistsException(email=email)
@@ -43,11 +55,17 @@ async def get_user_model(
 
     Args:
         db (AsyncSession): Async SQLAlchemy session.
-        user_id (int): User ID.
-        user_email (str): User email.
+        user_id (int, optional): User ID.
+        user_email (str, optional): User email.
+        join_settings (bool, optional): Whether to join the user settings. Defaults to False.
+        ignore_deleted (bool, optional): Whether to ignore deleted users. Defaults to False.
 
     Returns:
         UserModel: UserModel object.
+
+    Raises:
+        UserNotFoundException: If the user is not found.
+        UserDeletedException: If the user is deleted and ignore_deleted is False.
     """
     query = select(UserModel)
     if user_id:
@@ -67,7 +85,15 @@ async def get_user_model(
 
 
 async def create_user(db: AsyncSession, schema: UserCreateSchema) -> UserSchema:
-    """Create user."""
+    """Create a new user.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        schema (UserCreateSchema): Schema containing user creation data.
+
+    Returns:
+        UserSchema: The created UserSchema object.
+    """
     await raise_for_user_email(db, schema.email)
 
     user_model = UserModel(
@@ -82,13 +108,30 @@ async def create_user(db: AsyncSession, schema: UserCreateSchema) -> UserSchema:
 
 
 async def get_user(db: AsyncSession, user_id: int) -> UserSchema:
-    """Get user."""
+    """Get a user.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+
+    Returns:
+        UserSchema: The retrieved UserSchema object.
+    """
     user_model = await get_user_model(db, user_id=user_id)
     return UserSchema.model_construct(**user_model.to_dict())
 
 
 async def update_user(db: AsyncSession, user_id: int, schema: UserUpdateSchema | UserPatchSchema) -> UserSchema:
-    """Update user."""
+    """Update a user.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        schema (UserUpdateSchema | UserPatchSchema): Schema containing user update data.
+
+    Returns:
+        UserSchema: The updated UserSchema object.
+    """
     user_model = await get_user_model(db, user_id=user_id)
 
     if schema.email and schema.email != user_model.email:
@@ -102,7 +145,13 @@ async def update_user(db: AsyncSession, user_id: int, schema: UserUpdateSchema |
 
 
 async def delete_user(db: AsyncSession, redis: Redis, user_id: int) -> None:
-    """Delete user."""
+    """Delete a user.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        redis (Redis): Redis connection.
+        user_id (int): User ID.
+    """
     user_model = await get_user_model(db, user_id=user_id)
     user_model.deleted_at = datetime.now(timezone.utc)
     await settings_db.delete_settings(db, user_id)

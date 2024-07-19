@@ -9,6 +9,7 @@ from .abc import BaseSchema
 from .pagination import PaginationResponse
 
 
+# Field definitions for AuthSession schemas
 AUTH_SESSION_ID = f.UUID(prefix="Auth session ID.")
 AUTH_SESSION_LAST_ONLINE_AT = f.DATETIME(prefix="Auth session last online datetime.")
 AUTH_SESSION_CREATED_AT = f.DATETIME(prefix="Auth session creation datetime.")
@@ -17,14 +18,20 @@ USER_AGENT = f.BaseField(description="User agent.", examples=["Mozilla/5.0 (Wind
 
 
 class BaseAuthSessionSchema(BaseSchema):
-    """Base auth session schema."""
+    """Base auth session schema.
+
+    This class serves as a base for other auth session-related schemas, providing common fields and configurations.
+    """
 
     user_ip: str = USER_IP
     user_agent: str | None = USER_AGENT
 
 
 class AuthSessionSchema(BaseAuthSessionSchema):
-    """auth session schema."""
+    """Auth session schema.
+
+    This schema represents an auth session with additional metadata.
+    """
 
     id: UUID = AUTH_SESSION_ID
     last_online: datetime = AUTH_SESSION_LAST_ONLINE_AT
@@ -32,6 +39,9 @@ class AuthSessionSchema(BaseAuthSessionSchema):
 
 
 class AuthSessionPaginationResponse(PaginationResponse[AuthSessionSchema]):
-    """AuthSession pagination response schema."""
+    """Auth session pagination response schema.
+
+    This schema is used for paginated responses containing multiple auth sessions.
+    """
 
     items: Sequence[AuthSessionSchema]

@@ -22,10 +22,8 @@ class App:
 
         Args:
             config (AppConfig): Application config.
-            app (FastAPI, optional): FastAPI application. If set to None, a new
-                application will be created. If set to an existing FastAPI
-                application, it will be used (but not instance configuration
-                will be applied).
+            app (FastAPI, optional): FastAPI application. If set to None, a new application will be created. If set to
+                an existing FastAPI application, it will be used (but no instance configuration will be applied).
         """
         self.config = config
         self.app = app or FastAPI(
@@ -40,7 +38,11 @@ class App:
 
     @classmethod
     def from_env(cls) -> Self:
-        """Create application from environment variables."""
+        """Create application from environment variables.
+
+        Returns:
+            App: An instance of the App class.
+        """
         return cls(AppConfig.from_env())
 
     def setup_app(self) -> None:
@@ -67,7 +69,14 @@ class App:
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI) -> AsyncGenerator[None, None]:
-        """Lifespan."""
+        """Lifespan context manager for the FastAPI application.
+
+        Args:
+            app (FastAPI): The FastAPI application instance.
+
+        Yields:
+            AsyncGenerator[None, None]: The lifespan context.
+        """
         async with asynccontextmanager(app_depends.redis_pool)(self.config.redis.url) as redis_pool:
             with contextmanager(app_depends.db_session_maker)(self.config.database.url) as maker:
                 app.dependency_overrides[depend_stubs.app_config_stub] = lambda: self.config
@@ -81,5 +90,8 @@ def app() -> FastAPI:
     """Return FastAPI application.
 
     This function is used by Uvicorn to run the application.
+
+    Returns:
+        FastAPI: The FastAPI application instance.
     """
     return App.from_env().app

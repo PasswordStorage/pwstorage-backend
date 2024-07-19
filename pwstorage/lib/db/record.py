@@ -34,6 +34,9 @@ async def get_record_model(db: AsyncSession, record_id: int, user_id: int) -> Re
 
     Returns:
         RecordModel: RecordModel object.
+
+    Raises:
+        RecordNotFoundException: If the record is not found.
     """
     query = select(RecordModel).where(RecordModel.id == record_id, RecordModel.owner_user_id == user_id)
     result = (await db.execute(query)).scalar_one_or_none()
@@ -47,7 +50,18 @@ async def get_record_model(db: AsyncSession, record_id: int, user_id: int) -> Re
 async def create_record(
     db: AsyncSession, encryptor: Encryptor, encryption_key: str, user_id: int, schema: RecordCreateSchema
 ) -> RecordSchema:
-    """Create record."""
+    """Create a new record.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        encryptor (Encryptor): Encryptor instance for encrypting content.
+        encryption_key (str): Encryption key.
+        user_id (int): User ID.
+        schema (RecordCreateSchema): Schema containing record creation data.
+
+    Returns:
+        RecordSchema: The created RecordSchema object.
+    """
     if schema.folder_id is not None:
         await folder_db.raise_for_folder_exist(db, schema.folder_id, user_id)
 
@@ -64,7 +78,17 @@ async def create_record(
 async def get_records(
     db: AsyncSession, user_id: int, pagination: PaginationRequest, filters: RecordFilterRequest
 ) -> RecordPaginationResponse:
-    """Get records."""
+    """Get records with pagination and filters.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        pagination (PaginationRequest): Pagination request.
+        filters (RecordFilterRequest): Filters for querying records.
+
+    Returns:
+        RecordPaginationResponse: The paginated response containing records.
+    """
     query_filter = (RecordModel.owner_user_id == user_id,)
     query = select(RecordModel).where(*query_filter)
     query_count = select(func.count(RecordModel.id).filter(*query_filter))
@@ -84,7 +108,18 @@ async def get_records(
 async def get_record(
     db: AsyncSession, encryptor: Encryptor, encryption_key: str, record_id: int, user_id: int
 ) -> RecordSchema:
-    """Get record."""
+    """Get a specific record.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        encryptor (Encryptor): Encryptor instance for decrypting content.
+        encryption_key (str): Encryption key.
+        record_id (int): Record ID.
+        user_id (int): User ID.
+
+    Returns:
+        RecordSchema: The retrieved RecordSchema object.
+    """
     record_model = await get_record_model(db, record_id, user_id)
     return RecordSchema.model_construct(
         **record_model.to_dict() | {"content": encryptor.decrypt_text(record_model.content, encryption_key)}
@@ -99,7 +134,19 @@ async def update_record(
     user_id: int,
     schema: RecordUpdateSchema | RecordPatchSchema,
 ) -> RecordSchema:
-    """Update record."""
+    """Update a record.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        encryptor (Encryptor): Encryptor instance for encrypting content.
+        encryption_key (str): Encryption key.
+        record_id (int): Record ID.
+        user_id (int): User ID.
+        schema (RecordUpdateSchema | RecordPatchSchema): Schema containing record update data.
+
+    Returns:
+        RecordSchema: The updated RecordSchema object.
+    """
     record_model = await get_record_model(db, record_id, user_id)
 
     if schema.folder_id is not None and schema.folder_id != record_model.folder_id:
@@ -120,6 +167,12 @@ async def update_record(
 
 
 async def delete_record(db: AsyncSession, record_id: int, user_id: int) -> None:
-    """Delete record."""
+    """Delete a record.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        record_id (int): Record ID.
+        user_id (int): User ID.
+    """
     record_model = await get_record_model(db, record_id, user_id)
     await db.delete(record_model)

@@ -10,13 +10,7 @@ _T = t.TypeVar("_T", bound="AbstractModel")
 
 
 class AbstractModel(DeclarativeBase):
-    """Base database model.
-
-    It provides the basic methods like save, remove, update, etc.
-    for all the models.
-
-    Models with one primary key are supported.
-    """
+    """Base database model."""
 
     __abstract__ = True
 
@@ -42,7 +36,7 @@ class AbstractModel(DeclarativeBase):
 
     @classmethod
     def from_schema(cls: t.Type[_T], model: BaseModel) -> _T:
-        """Create a model from pydantic schema."""
+        """Create a model from a Pydantic schema."""
         return cls.from_dict(model.model_dump())
 
     @classmethod

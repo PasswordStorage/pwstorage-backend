@@ -10,15 +10,19 @@ from pwstorage.core.exceptions.auth import BadAuthDataException, BadFingerprintE
 from pwstorage.core.security import Encryptor
 from pwstorage.lib.db import auth_session as auth_session_db, user as user_db
 from pwstorage.lib.models import AuthSessionModel
-from pwstorage.lib.schemas.auth import TokenCreateSchema, TokenData, TokenRefreshSchema, TokenSchema
+from pwstorage.lib.schemas.auth import TokenCreateSchema, TokenRedisData, TokenRefreshSchema, TokenSchema
 from pwstorage.lib.schemas.enums.redis import AuthRedisKeyType
 
 
 def raise_user_password(password: str, password_hash: str) -> None:
-    """Raise for user password.
+    """Raise an exception if the user password is incorrect.
+
+    Args:
+        password (str): The user's password.
+        password_hash (str): The hashed password stored in the database.
 
     Raises:
-        BadAuthDataException: Bad password.
+        BadAuthDataException: If the password is incorrect.
     """
     if Encryptor.hash_password(password) != password_hash:
         raise BadAuthDataException
@@ -32,7 +36,19 @@ async def create_token(
     user_agent: str | None,
     schema: TokenCreateSchema,
 ) -> TokenSchema:
-    """Create token."""
+    """Create a new token.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        redis (Redis): Redis connection.
+        encryptor (Encryptor): Encryptor instance for encoding JWT.
+        user_ip (str): User IP address.
+        user_agent (str | None): User agent.
+        schema (TokenCreateSchema): Schema containing token creation data.
+
+    Returns:
+        TokenSchema: The created token schema.
+    """
     user_model = await user_db.get_user_model(db, user_email=schema.email, join_settings=True)
     raise_user_password(schema.password, user_model.password_hash)
 
@@ -70,7 +86,20 @@ async def refresh_token(
     token_id: UUID,
     schema: TokenRefreshSchema,
 ) -> TokenSchema:
-    """Refresh token."""
+    """Refresh an existing token.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        redis (Redis): Redis connection.
+        encryptor (Encryptor): Encryptor instance for encoding JWT.
+        user_ip (str): User IP address.
+        user_agent (str | None): User agent.
+        token_id (UUID): Token ID.
+        schema (TokenRefreshSchema): Schema containing token refresh data.
+
+    Returns:
+        TokenSchema: The refreshed token schema.
+    """
     auth_session_model = await auth_session_db.get_auth_session_model(
         db, refresh_token=token_id, join_user=True, join_user_settings=True
     )
@@ -106,10 +135,21 @@ async def refresh_token(
 async def _create_access_token(
     redis: Redis, auth_session_model: AuthSessionModel, *, access_token_id: UUID | None = None, expires_in: int = 30
 ) -> UUID:
+    """Create an access token and store it in Redis.
+
+    Args:
+        redis (Redis): Redis connection.
+        auth_session_model (AuthSessionModel): Auth session model.
+        access_token_id (UUID | None, optional): Access token ID. Defaults to None.
+        expires_in (int, optional): Expiration time in minutes. Defaults to 30.
+
+    Returns:
+        UUID: The created access token ID.
+    """
     access_token_id = access_token_id or uuid4()
     await redis.set(
         AuthRedisKeyType.access.format(access_token_id),
-        TokenData(
+        TokenRedisData(
             session_id=auth_session_model.id,
             user_id=auth_session_model.user_id,
             encryption_key=Encryptor.hash_password(auth_session_model.user.password_hash[-32:], digest_size=32),

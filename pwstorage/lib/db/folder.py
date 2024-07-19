@@ -17,10 +17,15 @@ from pwstorage.lib.utils.pagination import add_pagination_to_query, get_rows_cou
 
 
 async def raise_for_folder_exist(db: AsyncSession, folder_id: int, user_id: int) -> None:
-    """Raise for folder exists or deleted.
+    """Raise an exception if the folder does not exist or is deleted.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        folder_id (int): Folder ID.
+        user_id (int): User ID.
 
     Raises:
-        FolderException: Folder not found.
+        FolderNotFoundException: If the folder is not found.
     """
     await get_folder_model(db, folder_id, user_id)
 
@@ -35,6 +40,9 @@ async def get_folder_model(db: AsyncSession, folder_id: int, user_id: int) -> Fo
 
     Returns:
         FolderModel: FolderModel object.
+
+    Raises:
+        FolderNotFoundException: If the folder is not found.
     """
     query = select(FolderModel).where(FolderModel.id == folder_id, FolderModel.owner_user_id == user_id)
     result = (await db.execute(query)).scalar_one_or_none()
@@ -46,7 +54,16 @@ async def get_folder_model(db: AsyncSession, folder_id: int, user_id: int) -> Fo
 
 
 async def create_folder(db: AsyncSession, user_id: int, schema: FolderCreateSchema) -> FolderSchema:
-    """Create folder."""
+    """Create a new folder.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        schema (FolderCreateSchema): Schema containing folder creation data.
+
+    Returns:
+        FolderSchema: The created FolderSchema object.
+    """
     if schema.parent_folder_id is not None:
         await raise_for_folder_exist(db, schema.parent_folder_id, user_id)
 
@@ -58,7 +75,16 @@ async def create_folder(db: AsyncSession, user_id: int, schema: FolderCreateSche
 
 
 async def get_folders(db: AsyncSession, user_id: int, pagination: PaginationRequest) -> FolderPaginationResponse:
-    """Get folders."""
+    """Get folders with pagination.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        pagination (PaginationRequest): Pagination request.
+
+    Returns:
+        FolderPaginationResponse: The paginated response containing folders.
+    """
     query_filter = (FolderModel.owner_user_id == user_id,)
     query = select(FolderModel).where(*query_filter)
     query_count = select(func.count(FolderModel.id).filter(*query_filter))
@@ -72,7 +98,16 @@ async def get_folders(db: AsyncSession, user_id: int, pagination: PaginationRequ
 
 
 async def get_folder(db: AsyncSession, folder_id: int, user_id: int) -> FolderSchema:
-    """Get folder."""
+    """Get a specific folder.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        folder_id (int): Folder ID.
+        user_id (int): User ID.
+
+    Returns:
+        FolderSchema: The retrieved FolderSchema object.
+    """
     folder_model = await get_folder_model(db, folder_id, user_id)
     return FolderSchema.model_construct(**folder_model.to_dict())
 
@@ -80,7 +115,17 @@ async def get_folder(db: AsyncSession, folder_id: int, user_id: int) -> FolderSc
 async def update_folder(
     db: AsyncSession, folder_id: int, user_id: int, schema: FolderUpdateSchema | FolderPatchSchema
 ) -> FolderSchema:
-    """Update folder."""
+    """Update a folder.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        folder_id (int): Folder ID.
+        user_id (int): User ID.
+        schema (FolderUpdateSchema | FolderPatchSchema): Schema containing folder update data.
+
+    Returns:
+        FolderSchema: The updated FolderSchema object.
+    """
     folder_model = await get_folder_model(db, folder_id, user_id)
 
     if schema.parent_folder_id is not None and schema.parent_folder_id != folder_model.parent_folder_id:
@@ -94,11 +139,22 @@ async def update_folder(
 
 
 async def delete_folder(db: AsyncSession, folder_id: int, user_id: int) -> None:
-    """Delete folder."""
+    """Delete a folder.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        folder_id (int): Folder ID.
+        user_id (int): User ID.
+    """
     folder_model = await get_folder_model(db, folder_id, user_id)
     await db.delete(folder_model)
 
 
 async def delete_all_folders(db: AsyncSession, user_id: int) -> None:
-    """Delete user folders."""
+    """Delete all folders for a user.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+    """
     await db.execute(delete(FolderModel).where(FolderModel.owner_user_id == user_id))

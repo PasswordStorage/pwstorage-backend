@@ -4,6 +4,9 @@ from .abc import BaseSchema
 
 
 class OKSchema(BaseSchema):
-    """OK schema."""
+    """OK schema.
+
+    This schema represents a simple response indicating a successful operation.
+    """
 
     ok: bool = True

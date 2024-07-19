@@ -26,18 +26,23 @@ async def get_auth_session_model(
     join_user_settings: bool = False,
     ignore_deleted: bool = False,
 ) -> AuthSessionModel:
-    """Get a auth session model.
+    """Get an auth session model.
 
     Args:
         db (AsyncSession): Async SQLAlchemy session.
-        session_id (UUID): Session ID, using with user_id.
-        user_id (int): User ID, using with session_id.
-        refresh_token (UUID): Refresh token.
-        join_user (bool): Whether to join the user.
-        join_user_settings (bool): Whether to join the user settings.
+        session_id (UUID, optional): Session ID, used with user_id.
+        user_id (int, optional): User ID, used with session_id.
+        refresh_token (UUID, optional): Refresh token.
+        join_user (bool, optional): Whether to join the user. Defaults to False.
+        join_user_settings (bool, optional): Whether to join the user settings. Defaults to False.
+        ignore_deleted (bool, optional): Whether to ignore deleted sessions. Defaults to False.
 
     Returns:
         AuthSessionModel: AuthSessionModel object.
+
+    Raises:
+        AuthSessionNotFoundException: If the session is not found.
+        AuthSessionDeletedException: If the session is deleted and ignore_deleted is False.
     """
     query = select(AuthSessionModel)
     if session_id:
@@ -67,7 +72,18 @@ async def create_auth_session(
     user_agent: str | None,
     fingerprint: str,
 ) -> AuthSessionModel:
-    """Create auth session."""
+    """Create an auth session.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        user_ip (str): User IP address.
+        user_agent (str | None): User agent.
+        fingerprint (str): Fingerprint.
+
+    Returns:
+        AuthSessionModel: The created AuthSessionModel object.
+    """
     auth_session_model = AuthSessionModel(
         user_id=user_id, user_ip=user_ip, user_agent=user_agent, fingerprint=fingerprint
     )
@@ -79,7 +95,16 @@ async def create_auth_session(
 async def get_auth_sessions(
     db: AsyncSession, user_id: int, pagination: PaginationRequest
 ) -> AuthSessionPaginationResponse:
-    """Get auth sessions."""
+    """Get auth sessions.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        user_id (int): User ID.
+        pagination (PaginationRequest): Pagination request.
+
+    Returns:
+        AuthSessionPaginationResponse: The paginated response containing auth sessions.
+    """
     query_filter = (AuthSessionModel.user_id == user_id, AuthSessionModel.deleted_at.is_(None))
     query = select(AuthSessionModel).where(*query_filter)
     query_count = select(func.count(AuthSessionModel.id).filter(*query_filter))
@@ -93,7 +118,16 @@ async def get_auth_sessions(
 
 
 async def get_auth_session(db: AsyncSession, auth_session_id: UUID, user_id: int) -> AuthSessionSchema:
-    """Get auth session."""
+    """Get an auth session.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        auth_session_id (UUID): Auth session ID.
+        user_id (int): User ID.
+
+    Returns:
+        AuthSessionSchema: The retrieved AuthSessionSchema object.
+    """
     auth_session_model = await get_auth_session_model(db, session_id=auth_session_id, user_id=user_id)
     return AuthSessionSchema.model_construct(**auth_session_model.to_dict())
 
@@ -106,7 +140,16 @@ async def delete_auth_session(
     session: UUID | AuthSessionModel,
     user_id: int,
 ) -> None:
-    """Delete auth session."""
+    """Delete an auth session.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        redis (Redis): Redis connection.
+        user_ip (str): User IP address.
+        user_agent (str | None): User agent.
+        session (UUID | AuthSessionModel): Session ID or AuthSessionModel object.
+        user_id (int): User ID.
+    """
     auth_session_model = (
         session
         if isinstance(session, AuthSessionModel)
@@ -125,7 +168,13 @@ async def delete_auth_session(
 
 
 async def delete_user_sessions(db: AsyncSession, redis: Redis, user_id: int) -> None:
-    """Delete user auth sessions."""
+    """Delete user auth sessions.
+
+    Args:
+        db (AsyncSession): Async SQLAlchemy session.
+        redis (Redis): Redis connection.
+        user_id (int): User ID.
+    """
     query = select(AuthSessionModel).where(AuthSessionModel.user_id == user_id, AuthSessionModel.deleted_at.is_(None))
     result = (await db.execute(query)).scalars().all()
     redis_pipe = redis.pipeline()

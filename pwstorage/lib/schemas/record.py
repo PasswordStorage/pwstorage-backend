@@ -11,6 +11,7 @@ from .folder import FOLDER_ID
 from .pagination import PaginationResponse
 
 
+# Field definitions for Record schemas
 RECORD_ID = f.ID(prefix="Record ID.")
 RECORD_TYPE = f.BaseField(description="Record type.", examples=[RecordType.login])
 RECORD_TITLE = f.BaseField(description="Record title.", min_length=1, max_length=128, examples=["MyRecord"])
@@ -19,11 +20,15 @@ RECORD_IS_FAVORITE = f.BaseField(description="Record favorite status.", examples
 RECORD_CREATED_AT = f.DATETIME(prefix="Record creation datetime.")
 RECORD_UPDATED_AT = f.DATETIME(prefix="Record updation datetime.")
 
+# Type alias for record title with validation
 RecordTitle = Annotated[str, v.CheckTextValidator]
 
 
 class BaseRecordSchema(BaseSchema):
-    """Base record schema."""
+    """Base record schema.
+
+    This class serves as a base for other record-related schemas, providing common fields and configurations.
+    """
 
     folder_id: int | None = FOLDER_ID
     title: RecordTitle = RECORD_TITLE
@@ -31,20 +36,29 @@ class BaseRecordSchema(BaseSchema):
 
 
 class RecordCreateSchema(BaseRecordSchema):
-    """Create record schema."""
+    """Create record schema.
+
+    This schema is used for creating a new record.
+    """
 
     record_type: RecordType = RECORD_TYPE
     content: str = RECORD_CONTENT
 
 
 class RecordUpdateSchema(BaseRecordSchema):
-    """Update record schema."""
+    """Update record schema.
+
+    This schema is used for updating an existing record.
+    """
 
     content: str = RECORD_CONTENT
 
 
 class RecordPatchSchema(RecordUpdateSchema):
-    """Patch record schema."""
+    """Patch record schema.
+
+    This schema is used for partially updating an existing record.
+    """
 
     folder_id: int | None = FOLDER_ID(default=None)
     title: RecordTitle = RECORD_TITLE(default=None)
@@ -53,7 +67,10 @@ class RecordPatchSchema(RecordUpdateSchema):
 
 
 class RecordSchema(BaseRecordSchema):
-    """Record schema."""
+    """Record schema.
+
+    This schema represents a record with additional metadata.
+    """
 
     id: int = RECORD_ID
     content: str | None = RECORD_CONTENT
@@ -63,7 +80,10 @@ class RecordSchema(BaseRecordSchema):
 
 
 class RecordFilterRequest(BaseSchema):
-    """Record filter request schema."""
+    """Record filter request schema.
+
+    This schema is used for filtering records based on various criteria.
+    """
 
     folder_id_eq: int | None = FOLDER_ID(default=None, filter_type=FilterType.eq, table_column="folder_id")
     record_type_eq: RecordType | None = RECORD_TYPE(default=None, filter_type=FilterType.eq, table_column="record_type")
@@ -93,6 +113,9 @@ class RecordFilterRequest(BaseSchema):
 
 
 class RecordPaginationResponse(PaginationResponse[RecordSchema]):
-    """Record pagination response schema."""
+    """Record pagination response schema.
+
+    This schema is used for paginated responses containing multiple records.
+    """
 
     items: Sequence[RecordSchema]
