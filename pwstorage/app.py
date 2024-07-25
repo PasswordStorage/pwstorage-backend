@@ -10,6 +10,7 @@ from .core.config import AppConfig
 from .core.dependencies.app import constructors as app_depends, fastapi as depend_stubs
 from .core.exceptions.handler import regiter_exception_handlers
 from .lib.utils.openapi import generate_operation_id, get_openapi
+from .lib.utils.sentry import configure_sentry
 from .routers import router
 from .version import __version__
 
@@ -77,6 +78,7 @@ class App:
         Yields:
             AsyncGenerator[None, None]: The lifespan context.
         """
+        configure_sentry(self.config.sentry.url)
         async with asynccontextmanager(app_depends.redis_pool)(self.config.redis.url) as redis_pool:
             with contextmanager(app_depends.db_session_maker)(self.config.database.url) as maker:
                 app.dependency_overrides[depend_stubs.app_config_stub] = lambda: self.config

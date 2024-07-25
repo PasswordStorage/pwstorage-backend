@@ -40,6 +40,12 @@ class SecurityConfig(BaseSettings):
     secret_key: str
 
 
+class SentryConfig(BaseSettings):
+    """Sentry configuration."""
+
+    url: str | None = Field(default=None)
+
+
 class JWTConfig(BaseSettings):
     """JWT configuration."""
 
@@ -64,6 +70,7 @@ class AppConfig(BaseConfig):
 
     general: GeneralConfig
     security: SecurityConfig
+    sentry: SentryConfig
     jwt: JWTConfig
     database: DatabaseConfig
     redis: RedisConfig
