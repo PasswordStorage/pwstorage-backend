@@ -7,19 +7,31 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pydantic = "^2.7.0"
-pydantic-settings = "^2.2.1"
-sqlalchemy = "^2.0.29"
-fastapi = "^0.110.2"
-python-multipart = "^0.0.9"
-pyfa-converter-v2 = "^2.0.0rc1"
-uvicorn = {extras = ["standard"], version = "^0.29.0"}
-asyncpg = "^0.29.0"
-alembic = "^1.13.1"
-redis = {extras = ["hiredis"], version = "^5.0.4"}
-click = "^8.1.7"
+
+# FastAPI
+fastapi = "^0.110.2" # Web-framework
+pydantic = "^2.7.0" # Serialization-framework
+pydantic-settings = "^2.2.1" # Pydantic addon for env settings
+python-multipart = "^0.0.9" # Multipart form files handling
+pyfa-converter-v2 = "^2.0.0rc1" # Utility to convert Pydantic models to FastAPI dependencies
+uvicorn = {extras = ["standard"], version = "^0.29.0"} # ASGI web-server
+
+# Database
+sqlalchemy = "^2.0.29" # Database-framework
+asyncpg = "^0.29.0" # Async postgres driver
+alembic = "^1.13.1" # Database migrations
+redis = {extras = ["hiredis"], version = "^5.0.4"} # Redis database-framework
+
+# Security
 pyjwt = "^2.8.0"
 cryptography = "^42.0.8"
+
+# Sentry
+sentry-sdk = "^2.11.0"
+
+# CLI
+click = "^8.1.7" # CLI framework
+
 
 [tool.poetry.scripts]
 pwstorage = "pwstorage.__main__:main"
