@@ -1,8 +1,13 @@
 name: Code lint
 
 on:
-  push:
   pull_request:
+  push:
+    tags:
+      - v*
+    branches:
+      - main
+      - develop
 
 permissions:
   contents: read
