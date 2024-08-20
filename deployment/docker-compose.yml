@@ -5,7 +5,7 @@ services:
   app:
     image: &app_image ghcr.io/passwordstorage/pwstorage-backend
 
-    restart: on-failure
+    restart: unless-stopped
 
     env_file: &app_env_file
       - .env
@@ -55,7 +55,7 @@ services:
   db:
     image: postgres:16-alpine
 
-    restart: on-failure
+    restart: unless-stopped
 
     environment:
       POSTGRES_USER: user
@@ -76,7 +76,7 @@ services:
   redis:
     image: redis:7-alpine
 
-    restart: on-failure
+    restart: unless-stopped
 
     healthcheck:
       <<: *service_healthcheck

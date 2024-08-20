@@ -92,9 +92,9 @@ class Encryptor:
         """Hash text using the BLAKE2b algorithm.
 
         Args:
-            text (Union[str, bytes]): The text to hash.
+            text (str | bytes): The text to hash.
             digest_size (int, optional): The size of the hash digest. Defaults to 64.
-            salt (Union[str, bytes, optional]): An optional salt to use for hashing. Defaults to None.
+            salt (str | bytes, optional): An optional salt to use for hashing. Defaults to None.
 
         Returns:
             str: The hashed text.
